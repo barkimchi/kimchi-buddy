@@ -271,35 +271,30 @@ cmd_decay() {
 # Render active display: ASCII Kimchi with quip, formatted for markdown output.
 # Args: face, quip
 render_active() {
-  local face="${1:-( ˘▽˘)}" quip="${2:-}"
-  local mood
-  mood=$(cmd_mood)
+  local face="${1:-( ˘▽˘)}" quip="${2:-}" mode="${3:-}"
 
-  # Wrap quip to fit left side (max ~18 chars per line)
-  local quip_line1="" quip_line2=""
-  if [ ${#quip} -le 18 ]; then
-    quip_line1="$quip"
-  else
-    # Split at last space before char 18
-    quip_line1="${quip:0:18}"
-    local last_space
-    last_space=$(echo "$quip_line1" | grep -ob ' ' | tail -1 | cut -d: -f1)
-    if [ -n "$last_space" ]; then
-      quip_line1="${quip:0:$last_space}"
-      quip_line2=" ${quip:$((last_space + 1))}"
-    else
-      quip_line2=""
-    fi
-  fi
-
-  cat << ENDART
-\`\`\`
-               ╭~~~~╮
-$(printf '%-15s' "\"${quip_line1}")${face}
-$(printf '%-15s' "${quip_line2}\"") ╰~~~~╯
-                ~  ~
-\`\`\`
-ENDART
+  echo ""
+  case "$mode" in
+    pet)
+      echo "  ${face}  <3"
+      echo "   ~  ~"
+      echo ""
+      echo "  \"${quip}\""
+      ;;
+    feed)
+      echo "  ${face}  nom nom"
+      echo "   ~  ~   🍙"
+      echo ""
+      echo "  \"${quip}\""
+      ;;
+    *)
+      echo "  ${face}"
+      echo "   ~  ~"
+      echo ""
+      echo "  \"${quip}\""
+      ;;
+  esac
+  echo ""
 }
 
 # Standalone render command for testing
@@ -328,7 +323,7 @@ cmd_pet() {
 
   local quip
   quip=$(cmd_quip any pet)
-  render_active "(♡‿♡ )" "$quip"
+  render_active "(♡‿♡ )" "$quip" pet
 }
 
 # /feed - Resets hunger to 0, boosts happiness by 10
@@ -351,7 +346,7 @@ cmd_feed() {
 
   local quip
   quip=$(cmd_quip any feed)
-  render_active "( ◕‿◕)" "$quip"
+  render_active "( ◕‿◕)" "$quip" feed
 }
 
 # /buddy - Full status view
