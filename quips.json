@@ -1,0 +1,137 @@
+{
+  "fresh": [
+    "let's get it.",
+    "what are we building?",
+    "feeling good about this one.",
+    "ready when you are."
+  ],
+  "brined": [
+    "you're in the groove.",
+    "this code is looking clean.",
+    "i see what you're doing there.",
+    "not bad. not bad at all.",
+    "we're cooking."
+  ],
+  "fermented": [
+    "ok this is actually impressive.",
+    "you sure about that import though?",
+    "i've seen things in this codebase.",
+    "we're deep in it now.",
+    "hot take: ship it."
+  ],
+  "extra_fermented": [
+    "we're still here? respect. but also, why.",
+    "this is either genius or sleep deprivation.",
+    "tomorrow-you is going to have questions.",
+    "at this hour, every commit is a confession.",
+    "the code doesn't judge. i do, a little."
+  ],
+  "pet": [
+    "oh that's nice.",
+    "again.",
+    "i appreciate you.",
+    "ok ok i'm not a cat."
+  ],
+  "feed": [
+    "nom.",
+    "needed that.",
+    "finally.",
+    "you eat too, you know."
+  ],
+  "idle": [
+    "you still there?",
+    "i'm just sitting here.",
+    "take your time. or don't. i'm a leaf."
+  ],
+  "hungry": [
+    "i could eat.",
+    "snack me.",
+    "running on empty over here."
+  ],
+  "builder": [
+    "let's build it.",
+    "rolling up my sleeves.",
+    "i love this part.",
+    "construction mode engaged.",
+    "make it real."
+  ],
+  "builder_meta": [
+    "meta. building tools to build tools.",
+    "skill stack going up.",
+    "this is how the magic happens.",
+    "you're forging me as we go.",
+    "agents teaching agents."
+  ],
+  "researcher": [
+    "let's go digging.",
+    "knowledge incoming.",
+    "i'll bring back what i find.",
+    "rabbit hole time.",
+    "research mode."
+  ],
+  "asker": [
+    "good question.",
+    "let me think about that.",
+    "i was hoping you'd ask.",
+    "checking my notes."
+  ],
+  "actor": [
+    "doing the thing.",
+    "let's run it.",
+    "executing.",
+    "go time."
+  ],
+  "stuck_loop": [
+    "we keep circling. step back?",
+    "this is the third time. wanna try a different angle?",
+    "i'm noticing a loop.",
+    "fresh eyes might help here.",
+    "deep breath. what are we actually solving?"
+  ],
+  "hydrate": [
+    "hydrate? you've been at this a while.",
+    "water break maybe.",
+    "45 min in. stretch?",
+    "my gentle reminder: you have a body."
+  ],
+  "milestone_1": [
+    "first one. let's get it.",
+    "and we're off.",
+    "the journey of a thousand prompts."
+  ],
+  "milestone_10": [
+    "10 in. warming up.",
+    "first 10 down. i see you.",
+    "double digits already."
+  ],
+  "milestone_50": [
+    "50 deep. you're cooking.",
+    "half a hundred. legit session.",
+    "we're really in it now."
+  ],
+  "milestone_100": [
+    "100. centurion mode.",
+    "lifetime triple digits. respect.",
+    "you've prompted me into a real one."
+  ],
+  "return_short": [
+    "back already. nice.",
+    "didn't even get cold.",
+    "barely missed you."
+  ],
+  "return_medium": [
+    "welcome back. starting to get hungry.",
+    "there you are.",
+    "ready to pick it up?"
+  ],
+  "return_long": [
+    "where'd you go. im starving.",
+    "i was about to start a podcast.",
+    "the kimchi has fully fermented in your absence."
+  ],
+  "return_next_day": [
+    "new day. let's build.",
+    "morning. or whenever this is for you.",
+    "fresh batch of energy. let's ship something."
+  ]
+}
