@@ -17,24 +17,10 @@ _tokens_context_size() {
   esac
 }
 
-# Format token count as human-readable
+# Format token count with commas
 _tokens_format() {
   local tokens="$1"
-  if [ "$tokens" -ge 1000000 ]; then
-    local m=$(( tokens / 1000000 ))
-    local k=$(( (tokens % 1000000) / 100000 ))
-    printf '%s.%sM' "$m" "$k"
-  elif [ "$tokens" -ge 1000 ]; then
-    local k=$(( tokens / 1000 ))
-    local h=$(( (tokens % 1000) / 100 ))
-    if [ "$k" -ge 100 ]; then
-      printf '%sK' "$k"
-    else
-      printf '%s.%sK' "$k" "$h"
-    fi
-  else
-    printf '%s' "$tokens"
-  fi
+  printf '%s' "$tokens" | sed -e :a -e 's/\(.*[0-9]\)\([0-9]\{3\}\)/\1,\2/;ta'
 }
 
 widget_tokens_render() {
