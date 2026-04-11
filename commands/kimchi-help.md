@@ -20,6 +20,9 @@ Display this exactly:
 |                           demo 15m            |
 |  /kimchi-clear-countdown  Clear countdowns    |
 |  /kimchi-clear-session    Reset session timer |
+|  /kimchi-clear-mood       Reset spice meter   |
+|  /kimchi-clear-streak     Reset streak        |
+|  /kimchi-clear-tokens     Reset token counter |
 |  /kimchi-goal             Set session goal    |
 |                           /kimchi-goal 50     |
 |                           prompts             |

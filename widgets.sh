@@ -197,6 +197,23 @@ case "$MODE" in
     echo "Session timer reset."
     ;;
 
+  streak-reset)
+    local today
+    today=$(date +%Y-%m-%d)
+    w_update_state --arg today "$today" '.streak_days = 1 | .streak_last_date = $today'
+    echo "Streak reset to 1."
+    ;;
+
+  spice-reset)
+    w_update_state '.spice_timestamps = []'
+    echo "Spice meter reset to Mild."
+    ;;
+
+  tokens-reset)
+    w_update_state '.session_tokens_used = 0'
+    echo "Token counter reset."
+    ;;
+
   goal-set)
     gtype="${1:-}"
     gtarget="${2:-}"
