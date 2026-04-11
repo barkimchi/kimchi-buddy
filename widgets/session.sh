@@ -12,14 +12,15 @@ widget_session_render() {
   local elapsed=$(( W_NOW - session_start ))
   local display
 
+  local total_min=$(( elapsed / 60 ))
+
   if [ "$elapsed" -ge 3600 ]; then
     local h=$(( elapsed / 3600 ))
     local m=$(( (elapsed % 3600) / 60 ))
-    display="${h}h${m}m"
+    display="${total_min} min (${h}hr ${m}min)"
   else
-    local m=$(( elapsed / 60 ))
-    display="${m}m"
+    display="${total_min} min"
   fi
 
-  printf 'Session:%s' "$display"
+  printf 'Session: %s' "$display"
 }

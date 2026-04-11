@@ -197,21 +197,35 @@ case "$MODE" in
     echo "Session timer reset."
     ;;
 
-  streak-reset)
-    local today
-    today=$(date +%Y-%m-%d)
-    w_update_state --arg today "$today" '.streak_days = 1 | .streak_last_date = $today'
-    echo "Streak reset to 1."
+  widget-disable)
+    wname="${1:-}"
+    if [ -z "$wname" ]; then
+      echo "Usage: widgets.sh widget-disable <widget_name>"
+      exit 1
+    fi
+    if grep -q "^${wname}$" "$CONF_FILE" 2>/dev/null; then
+      sed -i '' "s/^${wname}$/#${wname}/" "$CONF_FILE"
+      echo "${wname} disabled."
+    else
+      echo "${wname} is already disabled or not found."
+    fi
     ;;
 
-  spice-reset)
-    w_update_state '.spice_timestamps = []'
-    echo "Spice meter reset to Mild."
-    ;;
-
-  tokens-reset)
-    w_update_state '.session_tokens_used = 0'
-    echo "Token counter reset."
+  widget-enable)
+    wname="${1:-}"
+    if [ -z "$wname" ]; then
+      echo "Usage: widgets.sh widget-enable <widget_name>"
+      exit 1
+    fi
+    if grep -q "^#${wname}$" "$CONF_FILE" 2>/dev/null; then
+      sed -i '' "s/^#${wname}$/${wname}/" "$CONF_FILE"
+      echo "${wname} enabled."
+    elif grep -q "^${wname}$" "$CONF_FILE" 2>/dev/null; then
+      echo "${wname} is already enabled."
+    else
+      echo "$wname" >> "$CONF_FILE"
+      echo "${wname} added and enabled."
+    fi
     ;;
 
   goal-set)

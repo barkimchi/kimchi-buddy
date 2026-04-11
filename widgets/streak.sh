@@ -27,5 +27,19 @@ widget_streak_tick() {
 widget_streak_render() {
   local days
   days=$(echo "$W_STATE" | jq -r '.streak_days // 1' 2>/dev/null || echo "1")
-  printf '🔥 %sd' "$days"
+
+  local icon
+  if [ "$days" -ge 31 ]; then
+    icon="👽"
+  elif [ "$days" -ge 10 ]; then
+    icon="👾"
+  elif [ "$days" -ge 5 ]; then
+    icon="🐉"
+  elif [ "$days" -ge 2 ]; then
+    icon="👑"
+  else
+    icon="🏁"
+  fi
+
+  printf '%s %sd' "$icon" "$days"
 }
