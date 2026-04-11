@@ -1,6 +1,6 @@
 {
   "show_cwd": true,
   "show_model": true,
-  "show_context": false,
+  "show_context": true,
   "color": "orange"
 }
