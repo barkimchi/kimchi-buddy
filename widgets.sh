@@ -306,6 +306,20 @@ case "$MODE" in
     printf '        cyan, white\n'
     ;;
 
+  self-update)
+    REPO="https://github.com/barkimchi/kimchi-buddy.git"
+    TMP_DIR=$(mktemp -d)
+    echo "Pulling latest from GitHub..."
+    if git clone --quiet "$REPO" "$TMP_DIR" 2>/dev/null; then
+      bash "$TMP_DIR/install.sh"
+      rm -rf "$TMP_DIR"
+    else
+      echo "Failed to clone repo. Check your internet connection."
+      rm -rf "$TMP_DIR"
+      exit 1
+    fi
+    ;;
+
   *)
     echo "Unknown mode: $MODE"
     exit 1

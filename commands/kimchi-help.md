@@ -37,6 +37,7 @@ Display this exactly:
 |                           color blue          |
 |                           /kimchi-settings    |
 |                           cwd off             |
+|  /kimchi-update           Update from GitHub  |
 |  /kimchi-help             This menu           |
 |                                               |
 +----------------------------------------------+
