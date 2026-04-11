@@ -14,8 +14,33 @@ cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
 [ -z "$cwd" ] && cwd="$PWD"
 dir=$(basename "$cwd")
 
-# ANSI colors
-ORANGE='\033[38;5;214m'
+# Config file for display preferences
+KIMCHI_CONFIG="$HOME/.claude/kimchi/config.json"
+show_cwd=true
+show_model=true
+show_context=true
+color_name="orange"
+
+if [ -f "$KIMCHI_CONFIG" ]; then
+  show_cwd=$(jq -r 'if .show_cwd == false then "false" else "true" end' "$KIMCHI_CONFIG" 2>/dev/null || echo "true")
+  show_model=$(jq -r 'if .show_model == false then "false" else "true" end' "$KIMCHI_CONFIG" 2>/dev/null || echo "true")
+  show_context=$(jq -r 'if .show_context == false then "false" else "true" end' "$KIMCHI_CONFIG" 2>/dev/null || echo "true")
+  color_name=$(jq -r '.color // "orange"' "$KIMCHI_CONFIG" 2>/dev/null || echo "orange")
+fi
+
+# ANSI color from config
+case "$color_name" in
+  orange)  COLOR='\033[38;5;214m' ;;
+  blue)    COLOR='\033[38;5;75m' ;;
+  green)   COLOR='\033[38;5;114m' ;;
+  red)     COLOR='\033[38;5;196m' ;;
+  purple)  COLOR='\033[38;5;141m' ;;
+  pink)    COLOR='\033[38;5;211m' ;;
+  yellow)  COLOR='\033[38;5;220m' ;;
+  cyan)    COLOR='\033[38;5;87m' ;;
+  white)   COLOR='\033[38;5;255m' ;;
+  *)       COLOR='\033[38;5;214m' ;;
+esac
 RESET='\033[0m'
 
 # Model name
@@ -126,10 +151,21 @@ fi
 widget_part=""
 [ -n "$widget_line1" ] && widget_part="  ${widget_line1}"
 
+# Build info parts based on config
+cwd_part=""
+[ "$show_cwd" = "true" ] && cwd_part="  $cwd"
+
+model_part=""
+[ "$show_model" = "true" ] && model_part="$model"
+
+[ "$show_context" != "true" ] && ctx_part=""
+
+info_line="${model_part}${ctx_part}"
+
 # Multi-line statusline: jar left, info right, compact layout
-printf "${ORANGE} ╭~~~~╮  %s${RESET}\n" "$cwd"
-printf "${ORANGE} %s  %s%s${RESET}\n" "$kimchi_face" "$model" "$ctx_part"
-printf "${ORANGE} ╰~~~~╯${widget_part}${RESET}\n"
+printf "${COLOR} ╭~~~~╮${cwd_part}${RESET}\n"
+printf "${COLOR} %s  %s${RESET}\n" "$kimchi_face" "$info_line"
+printf "${COLOR} ╰~~~~╯${widget_part}${RESET}\n"
 # Feet line with extra widget rows (session timer, goal, etc.)
 widget_extra_part=""
 if [ -n "$widget_extra" ]; then
@@ -137,4 +173,4 @@ if [ -n "$widget_extra" ]; then
   widget_extra_part=$(echo "$widget_extra" | tr '\n' ' ' | sed 's/  */ /g')
   [ -n "$widget_extra_part" ] && widget_extra_part="   ${widget_extra_part}"
 fi
-printf "${ORANGE}  ~  ~${widget_extra_part}${RESET}\n"
+printf "${COLOR}  ~  ~${widget_extra_part}${RESET}\n"

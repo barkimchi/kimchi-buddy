@@ -257,9 +257,57 @@ case "$MODE" in
     fi
     ;;
 
+  config-set)
+    key="${1:-}"
+    val="${2:-}"
+    if [ -z "$key" ] || [ -z "$val" ]; then
+      echo "Usage: widgets.sh config-set <key> <value>"
+      exit 1
+    fi
+    CONFIG_FILE="$KIMCHI_DIR/config.json"
+    if [ ! -f "$CONFIG_FILE" ]; then
+      echo '{"show_cwd":true,"show_model":true,"show_context":true,"color":"orange"}' > "$CONFIG_FILE"
+    fi
+    # Detect boolean vs string
+    if [ "$val" = "true" ] || [ "$val" = "false" ]; then
+      tmp=$(jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$CONFIG_FILE")
+      echo "$tmp" > "$CONFIG_FILE"
+    else
+      tmp=$(jq --arg k "$key" --arg v "$val" '.[$k] = $v' "$CONFIG_FILE")
+      echo "$tmp" > "$CONFIG_FILE"
+    fi
+    echo "${key} set to ${val}."
+    ;;
+
+  config-show)
+    CONFIG_FILE="$KIMCHI_DIR/config.json"
+    if [ ! -f "$CONFIG_FILE" ]; then
+      echo "No config file. Using defaults."
+      exit 0
+    fi
+    cfg=$(cat "$CONFIG_FILE")
+    c_cwd=$(echo "$cfg" | jq -r '.show_cwd // true')
+    c_model=$(echo "$cfg" | jq -r '.show_model // true')
+    c_ctx=$(echo "$cfg" | jq -r '.show_context // true')
+    c_color=$(echo "$cfg" | jq -r '.color // "orange"')
+
+    printf '\n'
+    printf '+-------------------------------+\n'
+    printf '|      KIMCHI SETTINGS          |\n'
+    printf '+-------------------------------+\n'
+    printf '|  CWD         %-16s|\n' "$c_cwd"
+    printf '|  Model       %-16s|\n' "$c_model"
+    printf '|  Context     %-16s|\n' "$c_ctx"
+    printf '|  Color       %-16s|\n' "$c_color"
+    printf '+-------------------------------+\n'
+    printf '\n'
+    printf 'Colors: orange, blue, green, red,\n'
+    printf '        purple, pink, yellow,\n'
+    printf '        cyan, white\n'
+    ;;
+
   *)
     echo "Unknown mode: $MODE"
-    echo "Usage: widgets.sh <tick|render|session-end|countdown-set|countdown-list|countdown-remove|goal-set|goal-clear|records>"
     exit 1
     ;;
 esac
