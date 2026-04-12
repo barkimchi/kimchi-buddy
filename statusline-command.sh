@@ -28,7 +28,11 @@ if [ -f "$KIMCHI_CONFIG" ]; then
   color_name=$(jq -r '.color // "orange"' "$KIMCHI_CONFIG" 2>/dev/null || echo "orange")
 fi
 
-# ANSI color from config
+# ANSI color from config.
+# Supports three forms:
+#   - named 8-bit color (orange, blue, ...)
+#   - named 24-bit palette color (ember, maroon, ...)
+#   - hex literal (#e8853b) — any truecolor value
 case "$color_name" in
   orange)  COLOR='\033[38;5;214m' ;;
   blue)    COLOR='\033[38;5;75m' ;;
@@ -39,6 +43,23 @@ case "$color_name" in
   yellow)  COLOR='\033[38;5;220m' ;;
   cyan)    COLOR='\033[38;5;87m' ;;
   white)   COLOR='\033[38;5;255m' ;;
+  ember)   COLOR='\033[38;2;232;133;59m' ;;
+  maroon)  COLOR='\033[38;2;196;84;84m' ;;
+  emerald) COLOR='\033[38;2;52;211;153m' ;;
+  gold)    COLOR='\033[38;2;234;179;58m' ;;
+  cobalt)  COLOR='\033[38;2;92;140;224m' ;;
+  violet)  COLOR='\033[38;2;124;92;224m' ;;
+  \#*)
+    hex="${color_name#\#}"
+    if [[ "$hex" =~ ^[0-9A-Fa-f]{6}$ ]]; then
+      r=$((16#${hex:0:2}))
+      g=$((16#${hex:2:2}))
+      b=$((16#${hex:4:2}))
+      COLOR="\033[38;2;${r};${g};${b}m"
+    else
+      COLOR='\033[38;5;214m'
+    fi
+    ;;
   *)       COLOR='\033[38;5;214m' ;;
 esac
 RESET='\033[0m'
