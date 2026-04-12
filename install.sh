@@ -34,10 +34,14 @@ cp "$SCRIPT_DIR/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 # Copy slash commands
 cp "$SCRIPT_DIR/commands/"*.md "$COMMANDS_DIR/"
 
+# Define timestamps used by both the fresh-state and migration branches.
+# Must be outside the conditional — set -u means even an unused $TODAY
+# reference on the migration path crashes the installer.
+NOW=$(date +%s)
+TODAY=$(date +%Y-%m-%d)
+
 # Initialize state if it doesn't exist
 if [ ! -f "$KIMCHI_DIR/state.json" ]; then
-  NOW=$(date +%s)
-  TODAY=$(date +%Y-%m-%d)
   cat > "$KIMCHI_DIR/state.json" << ENDJSON
 {
   "hunger": 0,
