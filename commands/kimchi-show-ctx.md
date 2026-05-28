@@ -1,12 +1,12 @@
 ---
-description: Show context percentage in status line
+description: Show context bar widget in status line
 allowed-tools: [Bash]
 ---
 
 Run this command:
 
 ```bash
-bash ~/.claude/kimchi/widgets.sh config-set show_context true
+bash ~/.claude/kimchi/widgets.sh widget-enable context
 ```
 
 Display the output. Do not add extra commentary.

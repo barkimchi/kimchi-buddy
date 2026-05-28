@@ -67,13 +67,10 @@ RESET='\033[0m'
 # Model name
 model=$(echo "$input" | jq -r '.model.display_name // .model.id // "unknown"')
 
-# Context remaining
-remaining_pct=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
+# Context display is now rendered by the `context` widget on the widget row.
+# Toggle with /kimchi-show-ctx and /kimchi-clear-ctx.
+# The legacy `show_context` config flag is retained but unused; see widgets.conf.
 ctx_part=""
-if [ -n "$remaining_pct" ]; then
-  rounded=$(printf '%.0f' "$remaining_pct")
-  ctx_part="  ctx: ${rounded}%"
-fi
 
 # Kimchi Buddy - full ASCII art in statusline (multi-line supported)
 # Face priority: pending_milestone > pending_return > pending_hydrate > idle > hungry
@@ -179,14 +176,15 @@ cwd_part=""
 model_part=""
 [ "$show_model" = "true" ] && model_part="$model"
 
-[ "$show_context" != "true" ] && ctx_part=""
+info_line="${model_part}"
 
-info_line="${model_part}${ctx_part}"
-
-# Multi-line statusline: jar left, info right, compact layout
-printf "${COLOR} ╭~~~~╮${cwd_part}${RESET}\n"
+# Multi-line statusline: jar left, info right, compact layout.
+# Widget content can legitimately contain `%` (e.g. "50% ctx"), so any
+# variable that may include user-rendered text must go through %s — never
+# interpolated into the printf format string directly.
+printf "${COLOR} ╭~~~~╮%s${RESET}\n" "$cwd_part"
 printf "${COLOR} %s  %s${RESET}\n" "$kimchi_face" "$info_line"
-printf "${COLOR} ╰~~~~╯${widget_part}${RESET}\n"
+printf "${COLOR} ╰~~~~╯%s${RESET}\n" "$widget_part"
 # Feet line with extra widget rows (session timer, goal, etc.)
 widget_extra_part=""
 if [ -n "$widget_extra" ]; then
@@ -194,4 +192,4 @@ if [ -n "$widget_extra" ]; then
   widget_extra_part=$(echo "$widget_extra" | tr '\n' ' ' | sed 's/  */ /g')
   [ -n "$widget_extra_part" ] && widget_extra_part="   ${widget_extra_part}"
 fi
-printf "${COLOR}  ~  ~${widget_extra_part}${RESET}\n"
+printf "${COLOR}  ~  ~%s${RESET}\n" "$widget_extra_part"
