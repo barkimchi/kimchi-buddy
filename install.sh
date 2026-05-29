@@ -20,10 +20,49 @@ mkdir -p "$COMMANDS_DIR"
 # Copy core files
 cp "$SCRIPT_DIR/kimchi.sh" "$KIMCHI_DIR/"
 cp "$SCRIPT_DIR/widgets.sh" "$KIMCHI_DIR/"
-cp "$SCRIPT_DIR/widgets.conf" "$KIMCHI_DIR/"
 cp "$SCRIPT_DIR/quips.json" "$KIMCHI_DIR/"
 chmod +x "$KIMCHI_DIR/kimchi.sh"
 chmod +x "$KIMCHI_DIR/widgets.sh"
+
+# Merge widgets.conf rather than clobber it, so the user's enabled/disabled
+# widget choices survive updates. Any widget the repo introduces that the user
+# has never seen is inserted right after the same predecessor it follows
+# upstream (or appended to the end if that predecessor isn't present).
+if [ ! -f "$KIMCHI_DIR/widgets.conf" ]; then
+  cp "$SCRIPT_DIR/widgets.conf" "$KIMCHI_DIR/widgets.conf"
+  echo "  Created widgets.conf"
+else
+  user_conf="$KIMCHI_DIR/widgets.conf"
+  added=""
+  prev=""
+  while IFS= read -r raw || [ -n "$raw" ]; do
+    bare="${raw#\#}"                       # strip a leading # (disabled marker)
+    [ "$bare" = "---" ] && continue        # row separators carry no state
+    [ -z "$bare" ] && continue
+    # A widget is "known" if the user conf mentions it enabled OR disabled.
+    if grep -qE "^#?${bare}$" "$user_conf"; then
+      prev="$bare"
+      continue
+    fi
+    # New widget: insert after its upstream predecessor if the user has it,
+    # otherwise append. Either way it lands enabled.
+    if [ -n "$prev" ] && grep -qE "^#?${prev}$" "$user_conf"; then
+      awk -v p="$prev" -v ins="$bare" '
+        { print }
+        !done && ($0 == p || $0 == "#" p) { print ins; done=1 }
+      ' "$user_conf" > "$user_conf.tmp" && mv "$user_conf.tmp" "$user_conf"
+    else
+      echo "$bare" >> "$user_conf"
+    fi
+    added="${added:+$added }$bare"
+    prev="$bare"
+  done < "$SCRIPT_DIR/widgets.conf"
+  if [ -n "$added" ]; then
+    echo "  widgets.conf: added new widget(s): $added (existing layout preserved)"
+  else
+    echo "  widgets.conf: layout preserved (no new widgets)"
+  fi
+fi
 
 # Copy widgets
 cp "$SCRIPT_DIR/widgets/"*.sh "$KIMCHI_DIR/widgets/"
@@ -140,6 +179,12 @@ if [ -f "$SETTINGS_FILE" ]; then
   echo "  Set status line command"
 else
   echo "  WARNING: ~/.claude/settings.json not found. You may need to configure hooks manually."
+fi
+
+# Record the installed commit so self-update can detect "already up to date".
+# Best-effort: SCRIPT_DIR may not be a git checkout (e.g. tarball install).
+if git -C "$SCRIPT_DIR" rev-parse --short HEAD > /dev/null 2>&1; then
+  git -C "$SCRIPT_DIR" rev-parse --short HEAD > "$KIMCHI_DIR/.version"
 fi
 
 echo ""
