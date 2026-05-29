@@ -308,10 +308,25 @@ case "$MODE" in
 
   self-update)
     REPO="https://github.com/barkimchi/kimchi-buddy.git"
+    VERSION_FILE="$KIMCHI_DIR/.version"
     TMP_DIR=$(mktemp -d)
-    echo "Pulling latest from GitHub..."
+    echo "Checking for updates..."
     if git clone --quiet "$REPO" "$TMP_DIR" 2>/dev/null; then
+      new_sha=$(git -C "$TMP_DIR" rev-parse --short HEAD 2>/dev/null || echo "")
+      old_sha=""
+      [ -f "$VERSION_FILE" ] && old_sha=$(cat "$VERSION_FILE" 2>/dev/null || echo "")
+      if [ -n "$new_sha" ] && [ "$old_sha" = "$new_sha" ]; then
+        echo "Already up to date ($new_sha)."
+        rm -rf "$TMP_DIR"
+        exit 0
+      fi
+      # install.sh writes the new SHA to $VERSION_FILE on success.
       bash "$TMP_DIR/install.sh"
+      if [ -n "$old_sha" ]; then
+        echo "Updated ${old_sha} -> ${new_sha:-latest}."
+      else
+        echo "Updated to ${new_sha:-latest}."
+      fi
       rm -rf "$TMP_DIR"
     else
       echo "Failed to clone repo. Check your internet connection."
