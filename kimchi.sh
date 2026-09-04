@@ -70,6 +70,7 @@ cmd_init() {
        .pending_milestone = null |
        .pending_return = null |
        .pending_hydrate = false |
+       .pending_quip = null |
        .lifetime_prompts = (.lifetime_prompts // 0) |
        .milestones_hit = (.milestones_hit // [])' \
       "$STATE_FILE")
@@ -94,17 +95,22 @@ cmd_init() {
   "pending_milestone": null,
   "pending_return": null,
   "pending_hydrate": false,
+  "pending_quip": null,
+  "last_quips": {},
   "last_session_end": 0
 }
 ENDJSON
   fi
 }
 
-# Select a random quip.
+# Select a quip.
 # Usage: cmd_quip <fermentation_level> <category>
 # fermentation_level: fresh|brined|fermented|extra_fermented|any
-# category: general|pet|feed|idle|hungry
+# category: general|pet|feed|idle|hungry|<activity>|milestone_*|return_*|hydrate
 # "general" uses the fermentation level key. Others use their own key.
+# Cycles through the pool in order instead of drawing at random, so every
+# quip gets seen and nothing repeats until the whole pool has played.
+# Position is remembered per key in state.json (.last_quips).
 cmd_quip() {
   local level="${1:-fresh}" category="${2:-general}"
   local key
@@ -122,13 +128,32 @@ cmd_quip() {
 
   local count
   count=$(jq -r ".[\"$key\"] | length" "$QUIPS_FILE" 2>/dev/null || echo "0")
+  case "$count" in ''|*[!0-9]*) count=0 ;; esac
   if [ "$count" -eq 0 ]; then
     echo ""
     return
   fi
 
-  local idx
-  idx=$((RANDOM % count))
+  # Advance past the last quip shown for this key. First visit starts at a
+  # time-derived offset so two installs don't march in lockstep.
+  local last_idx idx
+  last_idx=-1
+  if [ -f "$STATE_FILE" ]; then
+    last_idx=$(jq -r ".last_quips[\"$key\"] // -1" "$STATE_FILE" 2>/dev/null || echo "-1")
+    case "$last_idx" in ''|*[!0-9-]*) last_idx=-1 ;; esac
+  fi
+  if [ "$last_idx" -ge 0 ]; then
+    idx=$(( (last_idx + 1) % count ))
+  else
+    idx=$(( $(now_epoch) % count ))
+  fi
+
+  if [ -f "$STATE_FILE" ]; then
+    local tmp
+    tmp=$(jq --arg k "$key" --argjson i "$idx" '.last_quips[$k] = $i' "$STATE_FILE" 2>/dev/null || echo "")
+    [ -n "$tmp" ] && echo "$tmp" > "$STATE_FILE"
+  fi
+
   jq -r ".[\"$key\"][$idx]" "$QUIPS_FILE"
 }
 
@@ -282,7 +307,7 @@ render_active() {
       echo "  \"${quip}\""
       ;;
     feed)
-      echo "  ${face}  nom nom"
+      echo "  ${face}  nom nom  <3"
       echo "   ~  ~   🍙"
       echo ""
       echo "  \"${quip}\""
@@ -326,27 +351,27 @@ cmd_pet() {
   render_active "(♡‿♡ )" "$quip" pet
 }
 
-# /feed - Resets hunger to 0, boosts happiness by 10
+# /feed - Feeds and pets in one gesture: hunger to 0, happiness +20
 cmd_feed() {
   local happiness now_ts
   now_ts=$(now_epoch)
 
   happiness=$(read_state "happiness")
   happiness=${happiness:-50}
-  happiness=$((happiness + 10))
+  happiness=$((happiness + 20))
   [ "$happiness" -gt 100 ] && happiness=100
 
   local tmp
   tmp=$(jq \
     --argjson hp "$happiness" \
     --argjson ft "$now_ts" \
-    '.hunger = 0 | .happiness = $hp | .last_fed = $ft' \
+    '.hunger = 0 | .happiness = $hp | .last_fed = $ft | .last_pet = $ft' \
     "$STATE_FILE")
   echo "$tmp" > "$STATE_FILE"
 
   local quip
   quip=$(cmd_quip any feed)
-  render_active "( ◕‿◕)" "$quip" feed
+  render_active "(♡‿♡ )" "$quip" feed
 }
 
 # /buddy - Full status view
@@ -368,6 +393,15 @@ cmd_buddy() {
 
   elapsed_min=$(( (now_ts - session_start) / 60 ))
 
+  # Quip matched to the mood: idle and hungry have their own pools,
+  # everything else draws from the fermentation-level pool.
+  local quip
+  case "$mood" in
+    "😴") quip=$(cmd_quip any idle) ;;
+    "🍜") quip=$(cmd_quip any hungry) ;;
+    *)    quip=$(cmd_quip "$level" general) ;;
+  esac
+
   local face
   case "$mood" in
     "😴") face="( -_-)" ;;
@@ -387,6 +421,8 @@ cmd_buddy() {
  happiness: $(printf '%-2s' "$happiness")  ~  ~
             vibe: ${level}
 \`\`\`
+
+  "${quip}"
 ENDBUDDY
 }
 
@@ -517,7 +553,7 @@ cmd_tick() {
 
   # --- Clear pending_* from previous tick (one-shot face overrides) ---
   local tmp_clear
-  tmp_clear=$(jq '.pending_milestone = null | .pending_return = null | .pending_hydrate = false' "$STATE_FILE")
+  tmp_clear=$(jq '.pending_milestone = null | .pending_return = null | .pending_hydrate = false | .pending_quip = null' "$STATE_FILE")
   echo "$tmp_clear" > "$STATE_FILE"
 
   # --- Counters and sequence tracking ---
@@ -569,14 +605,14 @@ cmd_tick() {
     --argjson rc "$rapid_count" \
     --argjson fs "$flow_start" \
     --argjson lt "$lifetime_prompts" \
-    --argjson as "$activity_streak" \
+    --argjson act_streak "$activity_streak" \
     --arg ca "$activity" \
     '.prompt_count = $pc |
      .last_prompt_time = $lp |
      .rapid_count = $rc |
      .flow_start = $fs |
      .lifetime_prompts = $lt |
-     .activity_streak = $as |
+     .activity_streak = $act_streak |
      .current_activity = $ca' \
     "$STATE_FILE")
   echo "$tmp" > "$STATE_FILE"
@@ -594,6 +630,8 @@ cmd_tick() {
         local tmp2
         tmp2=$(jq --argjson ms "$ms" '.milestones_hit += [$ms] | .pending_milestone = ($ms | tostring)' "$STATE_FILE")
         echo "$tmp2" > "$STATE_FILE"
+        ms_quip=$(cmd_quip any "milestone_$ms")
+        update_field "pending_quip" "$(jq -n --arg q "$ms_quip" '$q')"
         break
       fi
     fi
@@ -609,6 +647,8 @@ cmd_tick() {
   if [ "$session_min" -ge 45 ] && [ "$hydration_warned" = "false" ]; then
     update_field "hydration_warned" "true"
     update_field "pending_hydrate" "true"
+    hy_quip=$(cmd_quip any hydrate)
+    update_field "pending_quip" "$(jq -n --arg q "$hy_quip" '$q')"
   fi
 
   # Always silent — statusline handles all visual surfacing
@@ -650,6 +690,8 @@ cmd_greet() {
 
   if [ "$return_bucket" != "none" ]; then
     update_field "pending_return" "\"$return_bucket\""
+    ret_quip=$(cmd_quip any "return_$return_bucket")
+    update_field "pending_quip" "$(jq -n --arg q "$ret_quip" '$q')"
   fi
 
   # Set last_prompt_time so we're not immediately idle

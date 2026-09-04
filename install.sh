@@ -70,6 +70,29 @@ cp "$SCRIPT_DIR/widgets/"*.sh "$KIMCHI_DIR/widgets/"
 # Copy status line
 cp "$SCRIPT_DIR/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 
+# Remove commands retired by the 4-command surface. Older installs still
+# have these in ~/.claude/commands and self-update never deletes files, so
+# clean them up explicitly.
+DEPRECATED_COMMANDS=(
+  kimchi-buddy kimchi-pet kimchi-help kimchi-wrong kimchi-update
+  kimchi-countdown kimchi-clear-countdown kimchi-records kimchi-highscore
+  kimchi-clear-session kimchi-clear-mood kimchi-clear-streak kimchi-clear-tokens
+  kimchi-clear-ctx kimchi-clear-cwd kimchi-clear-model
+  kimchi-show-session kimchi-show-mood kimchi-show-streak kimchi-show-tokens
+  kimchi-show-ctx kimchi-show-cwd kimchi-show-model kimchi-show-countdown
+  tint
+)
+removed_cmds=""
+for cmd_name in "${DEPRECATED_COMMANDS[@]}"; do
+  if [ -f "$COMMANDS_DIR/${cmd_name}.md" ]; then
+    rm -f "$COMMANDS_DIR/${cmd_name}.md"
+    removed_cmds="${removed_cmds:+$removed_cmds }$cmd_name"
+  fi
+done
+if [ -n "$removed_cmds" ]; then
+  echo "  Retired old commands: $removed_cmds"
+fi
+
 # Copy slash commands
 cp "$SCRIPT_DIR/commands/"*.md "$COMMANDS_DIR/"
 
@@ -102,6 +125,8 @@ if [ ! -f "$KIMCHI_DIR/state.json" ]; then
   "pending_milestone": null,
   "pending_return": null,
   "pending_hydrate": false,
+  "pending_quip": null,
+  "last_quips": {},
   "spice_timestamps": [],
   "streak_days": 1,
   "streak_last_date": "$TODAY",
@@ -116,6 +141,8 @@ ENDJSON
 else
   # Add widget fields if missing
   TEMP=$(jq '. +
+    (if .pending_quip then {} else {pending_quip: null} end) +
+    (if .last_quips then {} else {last_quips: {}} end) +
     (if .spice_timestamps then {} else {spice_timestamps: []} end) +
     (if .streak_days then {} else {streak_days: 1} end) +
     (if .streak_last_date then {} else {streak_last_date: "'"$TODAY"'"} end) +
@@ -190,5 +217,5 @@ fi
 echo ""
 echo "  Kimchi Buddy installed!"
 echo "  Restart Claude Code to see Kimchi in your status line."
-echo "  Type /kimchi-help to see all commands."
+echo "  Type /kimchi help to see all commands."
 echo ""
