@@ -11,6 +11,7 @@
 #   countdown-remove  Remove a countdown: widgets.sh countdown-remove <label>
 #   goal-set          Set session goal: widgets.sh goal-set <type> <target>
 #   goal-clear        Clear current goal
+#   goal-status       Show current goal progress plus all countdowns
 #   records           Display high score board
 
 set -euo pipefail
@@ -163,8 +164,8 @@ case "$MODE" in
       exit 1
     fi
     target_epoch=$(( W_NOW + seconds ))
-    w_update_state --argjson target "$target_epoch" --arg label "$label" \
-      '.countdowns = ((.countdowns // []) | map(select(.label != $label))) + [{"label": $label, "target_epoch": $target}]'
+    w_update_state --argjson target "$target_epoch" --arg clabel "$label" \
+      '.countdowns = ((.countdowns // []) | map(select(.label != $clabel))) + [{"label": $clabel, "target_epoch": $target}]'
     echo "Countdown '$label' set for ${seconds}s from now."
     ;;
 
@@ -182,8 +183,8 @@ case "$MODE" in
       echo "Usage: widgets.sh countdown-remove <label>"
       exit 1
     fi
-    w_update_state --arg label "$label" \
-      '.countdowns = ((.countdowns // []) | map(select(.label != $label)))'
+    w_update_state --arg clabel "$label" \
+      '.countdowns = ((.countdowns // []) | map(select(.label != $clabel)))'
     echo "Countdown '$label' removed."
     ;;
 
@@ -247,6 +248,22 @@ case "$MODE" in
   goal-clear)
     w_update_state '.goal_type = null | .goal_target = null | .goal_set_at = null'
     echo "Goal cleared."
+    ;;
+
+  goal-status)
+    g_render=""
+    if type widget_goal_render &>/dev/null; then
+      g_render=$(widget_goal_render 2>/dev/null || echo "")
+    fi
+    if [ -n "$g_render" ]; then
+      echo "Current goal: $g_render"
+    else
+      echo "No active goal."
+    fi
+    echo ""
+    if type widget_countdown_list &>/dev/null; then
+      widget_countdown_list
+    fi
     ;;
 
   records)

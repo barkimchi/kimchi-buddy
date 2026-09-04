@@ -1,32 +1,52 @@
 ---
-description: Set a session goal to track progress
-argument-hint: [target like "50 prompts", "2h", "90m"]
+description: Set or check session goals and countdown timers
+argument-hint: [50 prompts | 90m | <label> in <time> | clear [label]]
 allowed-tools: [Bash]
 ---
 
-If no arguments are provided, run this command and display the output:
+Parse `$ARGUMENTS` and follow the first matching case:
+
+1. No arguments: show the current goal and all countdowns:
 
 ```bash
-bash ~/.claude/kimchi/widgets.sh render
+bash ~/.claude/kimchi/widgets.sh goal-status
 ```
 
-Show only the Goal widget portion of the output.
-
-If the argument is "clear", run:
+2. `clear` alone: clear the current session goal:
 
 ```bash
 bash ~/.claude/kimchi/widgets.sh goal-clear
 ```
 
-Otherwise, parse the goal:
-- If it contains "prompt" or "prompts": type is "prompts", target is the number (e.g., "50 prompts" -> type=prompts, target=50)
-- If it contains "h" (hours): type is "duration", convert to minutes (e.g., "2h" -> type=duration, target=120)
-- If it contains "m" (minutes): type is "duration", target is the number (e.g., "90m" -> type=duration, target=90)
-
-Then run:
+3. `clear <label>`: remove the countdown with that label:
 
 ```bash
-bash ~/.claude/kimchi/widgets.sh goal-set <type> <target>
+bash ~/.claude/kimchi/widgets.sh countdown-remove <label>
 ```
 
-Display the output. Do not add extra commentary.
+4. `clear all`: clear the goal and every countdown:
+
+```bash
+bash ~/.claude/kimchi/widgets.sh goal-clear
+bash ~/.claude/kimchi/widgets.sh countdown-remove-all
+```
+
+5. A number followed by "prompt" or "prompts" (e.g. "50 prompts"): set a prompt goal:
+
+```bash
+bash ~/.claude/kimchi/widgets.sh goal-set prompts <number>
+```
+
+6. A bare duration (e.g. "90m", "2h"): set a duration goal in minutes ("Xm" = X, "Xh" = X * 60):
+
+```bash
+bash ~/.claude/kimchi/widgets.sh goal-set duration <minutes>
+```
+
+7. Anything else with a label and a time (e.g. "standup in 15m", "deploy 2h"): set a countdown. The label is the first word; convert the time to seconds ("Xm" = X * 60, "Xh" = X * 3600):
+
+```bash
+bash ~/.claude/kimchi/widgets.sh countdown-set <label> <seconds>
+```
+
+Display the output. Do not add any extra commentary.

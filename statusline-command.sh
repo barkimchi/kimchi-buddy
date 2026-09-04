@@ -74,7 +74,8 @@ ctx_part=""
 
 # Kimchi Buddy - full ASCII art in statusline (multi-line supported)
 # Face priority: pending_milestone > pending_return > pending_hydrate > idle > hungry
-#              > stuck_loop > on_a_roll > activity > late_night_rotation > day_rotation
+#              > stuck_loop (streak 8+) > on_a_roll > activity (rotating variants)
+#              > late_night_rotation > day_rotation
 kimchi_face="( ˘▽˘)"
 kimchi_state="$HOME/.claude/kimchi/state.json"
 if [ -f "$kimchi_state" ]; then
@@ -87,6 +88,7 @@ if [ -f "$kimchi_state" ]; then
   k_pending_milestone=$(jq -r '.pending_milestone // ""' "$kimchi_state" 2>/dev/null || echo "")
   k_pending_return=$(jq -r '.pending_return // ""' "$kimchi_state" 2>/dev/null || echo "")
   k_pending_hydrate=$(jq -r '.pending_hydrate // false' "$kimchi_state" 2>/dev/null || echo "false")
+  k_pending_quip=$(jq -r '.pending_quip // ""' "$kimchi_state" 2>/dev/null || echo "")
   k_now=$(date +%s)
   k_hour=$(date +%-H)
   k_idle=0
@@ -116,17 +118,47 @@ if [ -f "$kimchi_state" ]; then
     kimchi_face="( -_-)"
   elif [ "$k_hunger" -ge 40 ] 2>/dev/null; then
     kimchi_face="( ˘~˘)"
-  elif [ "$k_activity_streak" -ge 4 ] 2>/dev/null && [ "$k_activity" != "none" ]; then
+  elif [ "$k_activity_streak" -ge 8 ] 2>/dev/null && [ "$k_activity" != "none" ]; then
     kimchi_face="(・_・?)"
   elif [ "$k_rapid_count" -ge 3 ] 2>/dev/null; then
     kimchi_face="( ◕▽◕)"
   elif [ "$k_activity" != "none" ] && [ -n "$k_activity" ]; then
     case "$k_activity" in
-      builder_meta) kimchi_face="(ง ˘▽˘)ง" ;;
-      builder)      kimchi_face="( ˘▽˘)b" ;;
-      researcher)   kimchi_face="( ˘ᴗ˘)?" ;;
-      asker)        kimchi_face="( ◕‿◕)?" ;;
-      actor)        kimchi_face="( ◕▽◕)" ;;
+      builder_meta)
+        case $((k_prompt_count % 3)) in
+          0) kimchi_face="(ง ˘▽˘)ง" ;;
+          1) kimchi_face="(ﾉ˘▽˘)ﾉ" ;;
+          2) kimchi_face="(ง ˘◡˘)ง" ;;
+        esac
+        ;;
+      builder)
+        case $((k_prompt_count % 3)) in
+          0) kimchi_face="( ˘▽˘)b" ;;
+          1) kimchi_face="( ˘◡˘)b" ;;
+          2) kimchi_face="( ˘▽˘)っ" ;;
+        esac
+        ;;
+      researcher)
+        case $((k_prompt_count % 3)) in
+          0) kimchi_face="( ˘ᴗ˘)?" ;;
+          1) kimchi_face="( ˘‿˘)?" ;;
+          2) kimchi_face="( ˘ω˘)?" ;;
+        esac
+        ;;
+      asker)
+        case $((k_prompt_count % 3)) in
+          0) kimchi_face="( ◕‿◕)?" ;;
+          1) kimchi_face="( ◕△◕)?" ;;
+          2) kimchi_face="( ◕ω◕)?" ;;
+        esac
+        ;;
+      actor)
+        case $((k_prompt_count % 3)) in
+          0) kimchi_face="( ◕▽◕)" ;;
+          1) kimchi_face="( ◕◡◕)" ;;
+          2) kimchi_face="( ◕▽◕)ﾉ" ;;
+        esac
+        ;;
     esac
   elif [ "$k_hour" -lt 5 ] 2>/dev/null; then
     case $((k_prompt_count % 4)) in
@@ -192,4 +224,8 @@ if [ -n "$widget_extra" ]; then
   widget_extra_part=$(echo "$widget_extra" | tr '\n' ' ' | sed 's/  */ /g')
   [ -n "$widget_extra_part" ] && widget_extra_part="   ${widget_extra_part}"
 fi
-printf "${COLOR}  ~  ~%s${RESET}\n" "$widget_extra_part"
+quip_part=""
+if [ -n "$k_pending_quip" ] && [ "$k_pending_quip" != "null" ]; then
+  quip_part="  \"$k_pending_quip\""
+fi
+printf "${COLOR}  ~  ~%s%s${RESET}\n" "$widget_extra_part" "$quip_part"
